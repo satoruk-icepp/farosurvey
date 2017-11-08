@@ -10,6 +10,19 @@
 
 void XECCylFit_calpar(void){
 
+  TFile* fout=new TFile("FAROMPPC_ip_mesh.root","recreate");
+  TTree* tout=new TTree("tip","tip");
+
+  Int_t ChNum;
+  Double_t XPos;
+  Double_t YPos;
+  Double_t ZPos;
+
+  tout->Branch("ChNum",&ChNum);
+  tout->Branch("XPos",&XPos);
+  tout->Branch("YPos",&YPos);
+  tout->Branch("ZPos",&ZPos);
+
   Double_t *trans = new Double_t[3];
   TCanvas* canvas1=new TCanvas("canvas1","graph",600,600);
   TCanvas* canvas2=new TCanvas("canvas2","ZPhi",600,600);
@@ -28,7 +41,7 @@ void XECCylFit_calpar(void){
   vector<Int_t> id_v;
   vector<Double_t> a_v, b_v, c_v;
   //ifstream data("cyl_data_20170311_1.dat");
-  ifstream data("../XECFAROSiPMOnCOBRA.dat");
+  ifstream data("XECFAROSiPMOnCOBRA.dat");
   //ifstream data("mppc_cobra.dat");
   while(data>>id>>a>>b>>c){
     id_v.push_back(id);
@@ -43,11 +56,11 @@ void XECCylFit_calpar(void){
     Int_t tmprow=tmpid/NColumn;
     Int_t tmpcolumn=tmpid%NColumn;
 
-      WFUsedMPPC[tmpid] = true;
-      WFMPPCX[tmpid] = a_v.at(i);
-      WFMPPCY[tmpid] = b_v.at(i);
-      WFMPPCZ[tmpid] = c_v.at(i);
-      gr->SetPoint(gr->GetN(), WFMPPCX[tmpid], WFMPPCY[tmpid], WFMPPCZ[tmpid]);
+    WFUsedMPPC[tmpid] = true;
+    WFMPPCX[tmpid] = a_v.at(i);
+    WFMPPCY[tmpid] = b_v.at(i);
+    WFMPPCZ[tmpid] = c_v.at(i);
+    gr->SetPoint(gr->GetN(), WFMPPCX[tmpid], WFMPPCY[tmpid], WFMPPCZ[tmpid]);
   }
 
   canvas1->cd();
@@ -100,7 +113,7 @@ void XECCylFit_calpar(void){
   //ZAxis.Print();
   for (Int_t i = 0; i < nwf; i++){
     Int_t tmpid=id_v.at(i);
-    if(criteria(tmpid)==true){
+    if(criteria(tmpid,mode)==true){
       if (WFUsedMPPC[tmpid]==true) {
         Double_t coord[3]={WFMPPCX[tmpid],WFMPPCY[tmpid],WFMPPCZ[tmpid]};
         Double_t Cyl[3];
@@ -146,14 +159,19 @@ void XECCylFit_calpar(void){
   for (Int_t i = 0; i < NMPPC; i++) {
     Int_t tmprow=i/NColumn;
     Int_t tmpcolumn=i%NColumn;
-    Double_t ZPos=tmpcolumn*ZSpace+ZOffset;
-    Double_t PhiPos=tmprow*PhiSpace+PhiOffset;
-    if(criteria(i)==true){
-      grInterpolation->SetPoint(grInterpolation->GetN(),ZPos,PhiPos);
-      Double_t tmpcyl[3]={R,TMath::DegToRad()*PhiPos,ZPos};
+    Double_t CylZPos=tmpcolumn*ZSpace+ZOffset;
+    Double_t CylPhiPos=tmprow*PhiSpace+PhiOffset;
+    if(criteria(i,mode)==true){
+      grInterpolation->SetPoint(grInterpolation->GetN(),CylZPos,CylPhiPos);
+      Double_t tmpcyl[3]={R,TMath::DegToRad()*CylPhiPos,CylZPos};
       Double_t tmpcartes[3]={};
       Cyl2Cartes(tmpcartes,tmpcyl,Center,ZAxis,R);
-      grTransIP->SetPoint(grTransIP->GetN(),tmpcartes[0],tmpcartes[1],tmpcartes[2]);
+      ChNum=i;
+      XPos=tmpcartes[0];
+      YPos=tmpcartes[1];
+      ZPos=tmpcartes[2];
+      tout->Fill();
+      grTransIP->SetPoint(grTransIP->GetN(),XPos,YPos,ZPos);
     }
   }
 
@@ -171,6 +189,9 @@ void XECCylFit_calpar(void){
   grTransIP->SetMarkerColor(kRed);
   grTransIP->Draw("p0");
   gr->Draw("same p0");
+
+tout->Write();
+fout->Close();
 
   return;
 }

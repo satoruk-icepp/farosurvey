@@ -1,6 +1,8 @@
 #define NColumn 44
 #define NRow 93
 #define NMPPC 4092
+#define NCFRP 4
+#define NPart 8
 Bool_t MC = false;
 Int_t nmax = 600;
 Double_t r_set = 650;
@@ -8,6 +10,8 @@ Double_t z_set = 0;
 Double_t err = 0.15;
 Double_t ZAllMPPC[NMPPC];
 Double_t PhiAllMPPC[NMPPC];
+Int_t CFRPOrigin[NCFRP+1]={0,24,47,70,93};
+Int_t mode=0;
 Int_t nwf;
 
 Double_t WFMPPCX[NMPPC];
@@ -19,7 +23,7 @@ Bool_t WFUsedMPPC[NMPPC];
 void fcn(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
 //void fcn2(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
 Double_t fitfunc(Double_t x, Double_t y, Double_t z, Double_t *par, Int_t iter);
-Bool_t criteria(Int_t iCh);
+Bool_t criteria(Int_t iCh,Int_t i);
 Double_t Zdevmesh(Int_t channel, Double_t *par, Int_t iter);
 Double_t Phidevmesh(Int_t channel,Double_t *par, Int_t iter);
 void Zmesh(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);
@@ -34,7 +38,7 @@ void fcn(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag){
   Double_t chisq=0;
   Double_t delta;
   for(int i=0; i<NMPPC;i++){
-    if(criteria(i)==true){
+    if(criteria(i,mode)==true){
       if(WFUsedMPPC[i]==true){
         delta=fitfunc(WFMPPCX[i], WFMPPCY[i], WFMPPCZ[i], par, iter);
         chisq += delta* delta;
@@ -86,16 +90,32 @@ Double_t fitfunc(Double_t x, Double_t y, Double_t z, Double_t *par, Int_t iter){
   return value;
 }
 
-Bool_t criteria(Int_t iCh){
+Bool_t criteria(Int_t iCh,Int_t part){
   Int_t Row=iCh/NColumn;
   Int_t Column=iCh%NColumn;
-  Bool_t cri=false;
-  if(Row<23){
-    if(Column>21){
-      cri=true;
+  Bool_t cri_col=false;
+  Bool_t cri_row=false;
+  Bool_t cri_total=false;
+  if(part%2==0){
+    if(Column<22){
+      cri_col=true;
+    }
+  }else{
+    if(Column>=22){
+      cri_col=true;
     }
   }
-  return cri;
+  Int_t CFRP=part/2;
+  if(Row>=CFRPOrigin[CFRP]&&Row<CFRPOrigin[CFRP+1]){
+    cri_row=true;
+  }
+
+  if(cri_col==true&&cri_row==true){
+    cri_total=true;
+    //std::cout<<"selected: "<<iCh<<std::endl;
+  }
+
+  return cri_total;
 }
 
 Double_t Zdevmesh(Int_t channel, Double_t *par, Int_t iter){
@@ -104,7 +124,7 @@ Double_t Zdevmesh(Int_t channel, Double_t *par, Int_t iter){
   Double_t ZSpace=par[1];
   Double_t ZMesh=Column*ZSpace+ZOffset;
   Double_t deviation=ZMesh-ZAllMPPC[channel];
-  std::cout<<"channel: "<<channel<<" Column: "<<Column<<" Faro: "<<ZAllMPPC[channel]<<" mesh: "<<ZMesh<<std::endl;
+  //std::cout<<"channel: "<<channel<<" Column: "<<Column<<" Faro: "<<ZAllMPPC[channel]<<" mesh: "<<ZMesh<<std::endl;
   return deviation;
 
 }
@@ -124,7 +144,7 @@ void Zmesh(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag){
   Double_t chisq=0;
   Double_t delta;
   for(int i=0; i<NMPPC;i++){
-    if(criteria(i)==true){
+    if(criteria(i,mode)==true){
       if(WFUsedMPPC[i]==true){
         delta=Zdevmesh(i, par, iter);
         chisq += delta* delta;
@@ -141,7 +161,7 @@ void Phimesh(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag
   Double_t delta;
 
   for(int i=0; i<NMPPC;i++){
-    if(criteria(i)==true){
+    if(criteria(i,mode)==true){
       if(WFUsedMPPC[i]==true){
         //std::cout<<"channel: "<<MPPCIndex[i]<<std::endl;
         delta=Phidevmesh(i, par, iter);
