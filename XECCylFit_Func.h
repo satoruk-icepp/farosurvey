@@ -11,7 +11,7 @@ Double_t err = 0.15;
 Double_t ZAllMPPC[NMPPC];
 Double_t PhiAllMPPC[NMPPC];
 Int_t CFRPOrigin[NCFRP+1]={0,24,47,70,93};
-Int_t mode=0;
+Int_t mode;
 Int_t nwf;
 
 Double_t WFMPPCX[NMPPC];

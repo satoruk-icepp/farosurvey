@@ -60,138 +60,142 @@ void XECCylFit_calpar(void){
     WFMPPCX[tmpid] = a_v.at(i);
     WFMPPCY[tmpid] = b_v.at(i);
     WFMPPCZ[tmpid] = c_v.at(i);
-    gr->SetPoint(gr->GetN(), WFMPPCX[tmpid], WFMPPCY[tmpid], WFMPPCZ[tmpid]);
+    //gr->SetPoint(gr->GetN(), WFMPPCX[tmpid], WFMPPCY[tmpid], WFMPPCZ[tmpid]);
   }
 
-  canvas1->cd();
-  gr->Draw("p0");
+  //canvas1->cd();
+  //gr->Draw("p0");
 
-  TMinuit* gMinuit= new TMinuit(7);
-  gMinuit->SetFCN(fcn);
 
-  Double_t arglist[10];
-  Int_t ierflg = 0;
+  for (mode = 0; mode < 8; mode++) {
+    TMinuit* gMinuit= new TMinuit(7);
+    gMinuit->SetFCN(fcn);
 
-  arglist[0]=1;
+    Double_t arglist[10];
+    Int_t ierflg = 0;
 
-  Double_t initial[7]={r_set, trans[0], trans[1], trans[2], 0, 0, 1};
-  Double_t vstart[7]={r_set, trans[0], trans[1], trans[2], 0, 0, 1};
-  Double_t step[7]={1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
+    arglist[0]=1;
 
-  gMinuit->mnparm(0, "R", vstart[0], step[0], 0, 0, ierflg);
-  gMinuit->mnparm(1, "centerX", vstart[1], step[1], 0, 0, ierflg);
-  gMinuit->mnparm(2, "centerY", vstart[2], step[2], 0, 0, ierflg);
-  gMinuit->mnparm(3, "centerZ", vstart[3], step[3], 0, 0, ierflg);
-  gMinuit->mnparm(4, "directionX", vstart[4], step[4], -1, 1, ierflg);
-  gMinuit->mnparm(5, "directionY", vstart[5], step[5], -1, 1, ierflg);
-  gMinuit->mnparm(6, "directionZ", vstart[6], step[6], -1, 1, ierflg);
+    Double_t initial[7]={r_set, trans[0], trans[1], trans[2], 0, 0, 1};
+    Double_t vstart[7]={r_set, trans[0], trans[1], trans[2], 0, 0, 1};
+    Double_t step[7]={1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
 
-  gMinuit->FixParameter(3);
-  arglist[0]=500;
-  arglist[1]=1.;
+    gMinuit->mnparm(0, "R", vstart[0], step[0], 0, 0, ierflg);
+    gMinuit->mnparm(1, "centerX", vstart[1], step[1], 0, 0, ierflg);
+    gMinuit->mnparm(2, "centerY", vstart[2], step[2], 0, 0, ierflg);
+    gMinuit->mnparm(3, "centerZ", vstart[3], step[3], 0, 0, ierflg);
+    gMinuit->mnparm(4, "directionX", vstart[4], step[4], -1, 1, ierflg);
+    gMinuit->mnparm(5, "directionY", vstart[5], step[5], -1, 1, ierflg);
+    gMinuit->mnparm(6, "directionZ", vstart[6], step[6], -1, 1, ierflg);
 
-  gMinuit->mnexcm("MIGRAD", arglist, 2, ierflg);
+    gMinuit->FixParameter(3);
+    arglist[0]=500;
+    arglist[1]=1.;
 
-  Double_t *Par1st = new Double_t[7];
-  Double_t *Err1st = new Double_t[7];
-  Double_t temp_par, temp_err, chi2, ndf;
+    gMinuit->mnexcm("MIGRAD", arglist, 2, ierflg);
 
-  for (Int_t i = 0; i < 7; i++){
-    gMinuit->GetParameter(i, temp_par, temp_err);
-    Par1st[i] = temp_par;
-    Err1st[i] = temp_err;
-    cout << initial[i] << " " << temp_par << "+-" << temp_err << ":" << temp_par - initial[i] << endl;
-  }
+    Double_t *Par1st = new Double_t[7];
+    Double_t *Err1st = new Double_t[7];
+    Double_t temp_par, temp_err, chi2, ndf;
 
-  Double_t fedm,errdef,fmin;
-  Int_t npari,nparx,istat;
-  gMinuit -> mnstat(fmin,fedm,errdef,npari,nparx,istat);
+    for (Int_t i = 0; i < 7; i++){
+      gMinuit->GetParameter(i, temp_par, temp_err);
+      Par1st[i] = temp_par;
+      Err1st[i] = temp_err;
+      cout << initial[i] << " " << temp_par << "+-" << temp_err << ":" << temp_par - initial[i] << endl;
+    }
 
-  Double_t R=Par1st[0];
-  Double_t Center[3]={Par1st[1],Par1st[2],Par1st[3]};
-  TVector3 ZAxis(Par1st[4],Par1st[5],Par1st[6]);
-  //ZAxis.Print();
-  for (Int_t i = 0; i < nwf; i++){
-    Int_t tmpid=id_v.at(i);
-    if(criteria(tmpid,mode)==true){
-      if (WFUsedMPPC[tmpid]==true) {
-        Double_t coord[3]={WFMPPCX[tmpid],WFMPPCY[tmpid],WFMPPCZ[tmpid]};
-        Double_t Cyl[3];
-        Cartes2Cyl(coord,Cyl,Center,ZAxis,R);
-        Double_t PhiCyl=TMath::RadToDeg()*Cyl[1];
-        Double_t ZCyl=Cyl[2];
-        ZAllMPPC[tmpid]=ZCyl;
-        PhiAllMPPC[tmpid]=PhiCyl;
-        //std::cout<<"Theta: "<<PhiCyl<<" Z: "<<ZCyl<<std::endl;
-        grZPhi->SetPoint(grZPhi->GetN(),ZCyl,PhiCyl);
+    Double_t fedm,errdef,fmin;
+    Int_t npari,nparx,istat;
+    //gMinuit -> mnstat(fmin,fedm,errdef,npari,nparx,istat);
+
+    Double_t R=Par1st[0];
+    Double_t Center[3]={Par1st[1],Par1st[2],Par1st[3]};
+    TVector3 ZAxis(Par1st[4],Par1st[5],Par1st[6]);
+    //ZAxis.Print();
+    for (Int_t i = 0; i < nwf; i++){
+      Int_t tmpid=id_v.at(i);
+      if(criteria(tmpid,mode)==true){
+        if (WFUsedMPPC[tmpid]==true) {
+          Double_t coord[3]={WFMPPCX[tmpid],WFMPPCY[tmpid],WFMPPCZ[tmpid]};
+          Double_t Cyl[3];
+          Cartes2Cyl(coord,Cyl,Center,ZAxis,R);
+          Double_t PhiCyl=TMath::RadToDeg()*Cyl[1];
+          Double_t ZCyl=Cyl[2];
+          ZAllMPPC[tmpid]=ZCyl;
+          PhiAllMPPC[tmpid]=PhiCyl;
+          //std::cout<<"Theta: "<<PhiCyl<<" Z: "<<ZCyl<<std::endl;
+          //grZPhi->SetPoint(grZPhi->GetN(),ZCyl,PhiCyl);
+        }
+      }
+    }
+
+    TMinuit *gMinuit_Zmesh =new TMinuit(2);
+    gMinuit_Zmesh->SetFCN(Zmesh);
+    Int_t ierflgZ=0;
+    Double_t arglistZ[10];
+    arglistZ[0]=500;
+    arglistZ[1]=1;
+    gMinuit_Zmesh->mnparm(0, "ZOffset",-300, 0.1, 0, 0, ierflg);
+    gMinuit_Zmesh->mnparm(1, "ZSpace",15.1, 0.1, 0, 0, ierflg);
+    gMinuit_Zmesh->mnexcm("MIGRAD", arglistZ, 2, ierflgZ);
+
+    Double_t ZOffset,ZOffsetErr,ZSpace,ZSpaceErr;
+    gMinuit_Zmesh->GetParameter(0, ZOffset, ZOffsetErr);
+    gMinuit_Zmesh->GetParameter(1, ZSpace, ZSpaceErr);
+
+    TMinuit *gMinuit_Phimesh =new TMinuit(2);
+    gMinuit_Phimesh->SetFCN(Phimesh);
+    Int_t ierflgPhi=0;
+    Double_t arglistPhi[10];
+    arglistPhi[0]=500;
+    arglistPhi[1]=1;
+    gMinuit_Phimesh->mnparm(0, "PhiOffset",120 , 0.1, 0, 0, ierflgPhi);
+    gMinuit_Phimesh->mnparm(1, "PhiSpace",1 , 0.1, 0, 0, ierflgPhi);
+    gMinuit_Phimesh->mnexcm("MIGRAD", arglistPhi, 2, ierflgPhi);
+
+    Double_t PhiOffset,PhiOffsetErr,PhiSpace,PhiSpaceErr;
+    gMinuit_Phimesh->GetParameter(0, PhiOffset, PhiOffsetErr);
+    gMinuit_Phimesh->GetParameter(1, PhiSpace, PhiSpaceErr);
+
+    for (Int_t i = 0; i < NMPPC; i++) {
+      Int_t tmprow=i/NColumn;
+      Int_t tmpcolumn=i%NColumn;
+      Double_t CylZPos=tmpcolumn*ZSpace+ZOffset;
+      Double_t CylPhiPos=tmprow*PhiSpace+PhiOffset;
+      if(criteria(i,mode)==true){
+        //grInterpolation->SetPoint(grInterpolation->GetN(),CylZPos,CylPhiPos);
+        Double_t tmpcyl[3]={R,TMath::DegToRad()*CylPhiPos,CylZPos};
+        Double_t tmpcartes[3]={};
+        Cyl2Cartes(tmpcartes,tmpcyl,Center,ZAxis,R);
+        ChNum=i;
+        XPos=tmpcartes[0];
+        YPos=tmpcartes[1];
+        ZPos=tmpcartes[2];
+        tout->Fill();
+        //grTransIP->SetPoint(grTransIP->GetN(),XPos,YPos,ZPos);
       }
     }
   }
 
-  TMinuit *gMinuit_Zmesh =new TMinuit(2);
-  gMinuit_Zmesh->SetFCN(Zmesh);
-  Int_t ierflgZ=0;
-  Double_t arglistZ[10];
-  arglistZ[0]=500;
-  arglistZ[1]=1;
-  gMinuit_Zmesh->mnparm(0, "ZOffset",-300, 0.1, 0, 0, ierflg);
-  gMinuit_Zmesh->mnparm(1, "ZSpace",15.1, 0.1, 0, 0, ierflg);
-  gMinuit_Zmesh->mnexcm("MIGRAD", arglistZ, 2, ierflgZ);
 
-  Double_t ZOffset,ZOffsetErr,ZSpace,ZSpaceErr;
-  gMinuit_Zmesh->GetParameter(0, ZOffset, ZOffsetErr);
-  gMinuit_Zmesh->GetParameter(1, ZSpace, ZSpaceErr);
-
-  TMinuit *gMinuit_Phimesh =new TMinuit(2);
-  gMinuit_Phimesh->SetFCN(Phimesh);
-  Int_t ierflgPhi=0;
-  Double_t arglistPhi[10];
-  arglistPhi[0]=500;
-  arglistPhi[1]=1;
-  gMinuit_Phimesh->mnparm(0, "PhiOffset",120 , 0.1, 0, 0, ierflgPhi);
-  gMinuit_Phimesh->mnparm(1, "PhiSpace",1 , 0.1, 0, 0, ierflgPhi);
-  gMinuit_Phimesh->mnexcm("MIGRAD", arglistPhi, 2, ierflgPhi);
-
-  Double_t PhiOffset,PhiOffsetErr,PhiSpace,PhiSpaceErr;
-  gMinuit_Phimesh->GetParameter(0, PhiOffset, PhiOffsetErr);
-  gMinuit_Phimesh->GetParameter(1, PhiSpace, PhiSpaceErr);
-
-  for (Int_t i = 0; i < NMPPC; i++) {
-    Int_t tmprow=i/NColumn;
-    Int_t tmpcolumn=i%NColumn;
-    Double_t CylZPos=tmpcolumn*ZSpace+ZOffset;
-    Double_t CylPhiPos=tmprow*PhiSpace+PhiOffset;
-    if(criteria(i,mode)==true){
-      grInterpolation->SetPoint(grInterpolation->GetN(),CylZPos,CylPhiPos);
-      Double_t tmpcyl[3]={R,TMath::DegToRad()*CylPhiPos,CylZPos};
-      Double_t tmpcartes[3]={};
-      Cyl2Cartes(tmpcartes,tmpcyl,Center,ZAxis,R);
-      ChNum=i;
-      XPos=tmpcartes[0];
-      YPos=tmpcartes[1];
-      ZPos=tmpcartes[2];
-      tout->Fill();
-      grTransIP->SetPoint(grTransIP->GetN(),XPos,YPos,ZPos);
-    }
-  }
-
-  canvas2->cd();
+  //canvas2->cd();
   grZPhi->SetMarkerStyle(20);
   grZPhi->SetMarkerSize(2);
   grZPhi->SetMarkerColor(kRed);
-  grZPhi->Draw("ap");
+  //grZPhi->Draw("ap");
   grInterpolation->SetMarkerStyle(20);
   grInterpolation->SetMarkerColor(kBlue);
   grInterpolation->Draw("same p");
 
-  canvas3->cd();
+  //canvas3->cd();
   grTransIP->SetMarkerStyle(20);
   grTransIP->SetMarkerColor(kRed);
   grTransIP->Draw("p0");
-  gr->Draw("same p0");
+  //gr->Draw("same p0");
 
-tout->Write();
-fout->Close();
+  tout->Write();
+  fout->Close();
 
   return;
 }
