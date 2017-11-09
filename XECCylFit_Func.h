@@ -120,18 +120,19 @@ Bool_t criteria(Int_t iCh,Int_t part){
 
 Double_t Zdevmesh(Int_t channel, Double_t *par, Int_t iter){
   Double_t Column=(double)(channel%NColumn);
-  Double_t ZOffset=par[0];
+  Double_t Row=TMath::Floor(channel/NColumn);
+  Double_t ZOffset=par[0]+par[2]*Row;
   Double_t ZSpace=par[1];
   Double_t ZMesh=Column*ZSpace+ZOffset;
   Double_t deviation=ZMesh-ZAllMPPC[channel];
   //std::cout<<"channel: "<<channel<<" Column: "<<Column<<" Faro: "<<ZAllMPPC[channel]<<" mesh: "<<ZMesh<<std::endl;
   return deviation;
-
 }
 
 Double_t Phidevmesh(Int_t channel,Double_t *par, Int_t iter){
-  Int_t Row = channel/NColumn;
-  Double_t PhiOffset=par[0];
+  Double_t Column=(double)(channel%NColumn);
+  Double_t Row=TMath::Floor(channel/NColumn);
+  Double_t PhiOffset=par[0]+par[2]*Column;
   Double_t PhiSpace=par[1];
   Double_t PhiMesh=(double)Row*PhiSpace+PhiOffset;
   Double_t deviation=PhiMesh-PhiAllMPPC[channel];

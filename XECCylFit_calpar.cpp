@@ -25,12 +25,12 @@ void XECCylFit_calpar(void){
 
   Double_t *trans = new Double_t[3];
   TCanvas* canvas1=new TCanvas("canvas1","graph",600,600);
-  TCanvas* canvas2=new TCanvas("canvas2","ZPhi",600,600);
-  TCanvas* canvas3 = new TCanvas("canvas3","Totally interpolated",600,600);
-  TGraph2D *gr = new TGraph2D();
-  TGraph *grZPhi =new TGraph();
-  TGraph *grInterpolation =new TGraph();
+  TCanvas* canvas2=new TCanvas("canvas2","ZPhi",1200,600);
+  //TCanvas* canvas3 = new TCanvas("canvas3","Totally interpolated",600,600);
+  TGraph2D *grWF = new TGraph2D();
   TGraph2D *grTransIP =new TGraph2D();
+  TGraph* grZPhi[NPart];
+  TGraph *grInterpolation[NPart];
 
   trans[0] = 0;
   trans[1] = 0;
@@ -60,14 +60,13 @@ void XECCylFit_calpar(void){
     WFMPPCX[tmpid] = a_v.at(i);
     WFMPPCY[tmpid] = b_v.at(i);
     WFMPPCZ[tmpid] = c_v.at(i);
-    //gr->SetPoint(gr->GetN(), WFMPPCX[tmpid], WFMPPCY[tmpid], WFMPPCZ[tmpid]);
+    grWF->SetPoint(grWF->GetN(), WFMPPCX[tmpid], WFMPPCY[tmpid], WFMPPCZ[tmpid]);
   }
+  canvas2->Divide(4,2);
+  for (mode = 0; mode < NPart; mode++) {
+    grZPhi[mode]=new TGraph();
+    grInterpolation[mode]=new TGraph();
 
-  //canvas1->cd();
-  //gr->Draw("p0");
-
-
-  for (mode = 0; mode < 8; mode++) {
     TMinuit* gMinuit= new TMinuit(7);
     gMinuit->SetFCN(fcn);
 
@@ -125,12 +124,12 @@ void XECCylFit_calpar(void){
           ZAllMPPC[tmpid]=ZCyl;
           PhiAllMPPC[tmpid]=PhiCyl;
           //std::cout<<"Theta: "<<PhiCyl<<" Z: "<<ZCyl<<std::endl;
-          //grZPhi->SetPoint(grZPhi->GetN(),ZCyl,PhiCyl);
+          grZPhi[mode]->SetPoint(grZPhi[mode]->GetN(),ZCyl,PhiCyl);
         }
       }
     }
 
-    TMinuit *gMinuit_Zmesh =new TMinuit(2);
+    TMinuit *gMinuit_Zmesh =new TMinuit(3);
     gMinuit_Zmesh->SetFCN(Zmesh);
     Int_t ierflgZ=0;
     Double_t arglistZ[10];
@@ -138,13 +137,15 @@ void XECCylFit_calpar(void){
     arglistZ[1]=1;
     gMinuit_Zmesh->mnparm(0, "ZOffset",-300, 0.1, 0, 0, ierflg);
     gMinuit_Zmesh->mnparm(1, "ZSpace",15.1, 0.1, 0, 0, ierflg);
+    gMinuit_Zmesh->mnparm(2, "ZTilt",0, 0.1, 0, 0, ierflg);
     gMinuit_Zmesh->mnexcm("MIGRAD", arglistZ, 2, ierflgZ);
 
-    Double_t ZOffset,ZOffsetErr,ZSpace,ZSpaceErr;
+    Double_t ZOffset,ZOffsetErr,ZSpace,ZSpaceErr,ZTilt,ZTiltErr;
     gMinuit_Zmesh->GetParameter(0, ZOffset, ZOffsetErr);
     gMinuit_Zmesh->GetParameter(1, ZSpace, ZSpaceErr);
+    gMinuit_Zmesh->GetParameter(2, ZTilt, ZTiltErr);
 
-    TMinuit *gMinuit_Phimesh =new TMinuit(2);
+    TMinuit *gMinuit_Phimesh =new TMinuit(3);
     gMinuit_Phimesh->SetFCN(Phimesh);
     Int_t ierflgPhi=0;
     Double_t arglistPhi[10];
@@ -152,19 +153,21 @@ void XECCylFit_calpar(void){
     arglistPhi[1]=1;
     gMinuit_Phimesh->mnparm(0, "PhiOffset",120 , 0.1, 0, 0, ierflgPhi);
     gMinuit_Phimesh->mnparm(1, "PhiSpace",1 , 0.1, 0, 0, ierflgPhi);
+    gMinuit_Phimesh->mnparm(2, "PhiTilt",0, 0.1, 0, 0, ierflg);
     gMinuit_Phimesh->mnexcm("MIGRAD", arglistPhi, 2, ierflgPhi);
 
-    Double_t PhiOffset,PhiOffsetErr,PhiSpace,PhiSpaceErr;
+    Double_t PhiOffset,PhiOffsetErr,PhiSpace,PhiSpaceErr,PhiTilt,PhiTiltErr;
     gMinuit_Phimesh->GetParameter(0, PhiOffset, PhiOffsetErr);
     gMinuit_Phimesh->GetParameter(1, PhiSpace, PhiSpaceErr);
+    gMinuit_Phimesh->GetParameter(2, PhiTilt, PhiTiltErr);
 
     for (Int_t i = 0; i < NMPPC; i++) {
       Int_t tmprow=i/NColumn;
       Int_t tmpcolumn=i%NColumn;
-      Double_t CylZPos=tmpcolumn*ZSpace+ZOffset;
-      Double_t CylPhiPos=tmprow*PhiSpace+PhiOffset;
+      Double_t CylZPos=tmpcolumn*ZSpace+ZOffset+tmprow*ZTilt;
+      Double_t CylPhiPos=tmprow*PhiSpace+PhiOffset+tmpcolumn*PhiTilt;
       if(criteria(i,mode)==true){
-        //grInterpolation->SetPoint(grInterpolation->GetN(),CylZPos,CylPhiPos);
+        grInterpolation[mode]->SetPoint(grInterpolation[mode]->GetN(),CylZPos,CylPhiPos);
         Double_t tmpcyl[3]={R,TMath::DegToRad()*CylPhiPos,CylZPos};
         Double_t tmpcartes[3]={};
         Cyl2Cartes(tmpcartes,tmpcyl,Center,ZAxis,R);
@@ -173,26 +176,37 @@ void XECCylFit_calpar(void){
         YPos=tmpcartes[1];
         ZPos=tmpcartes[2];
         tout->Fill();
-        //grTransIP->SetPoint(grTransIP->GetN(),XPos,YPos,ZPos);
+        grTransIP->SetPoint(grTransIP->GetN(),XPos,YPos,ZPos);
       }
     }
+
+
+    canvas2->cd(mode+1);
+    grZPhi[mode]->SetMarkerStyle(21);
+    //grZPhi[mode]->SetMarkerSize(0.3);
+    grZPhi[mode]->SetMarkerColor(kRed);
+    grZPhi[mode]->Draw("ap");
+    grInterpolation[mode]->SetMarkerStyle(20);
+    //grZPhi[mode]->SetMarkerSize(0.1);
+    grInterpolation[mode]->SetMarkerColor(kBlue);
+    grInterpolation[mode]->Draw("same p");
+
   }
 
-
-  //canvas2->cd();
-  grZPhi->SetMarkerStyle(20);
-  grZPhi->SetMarkerSize(2);
-  grZPhi->SetMarkerColor(kRed);
-  //grZPhi->Draw("ap");
-  grInterpolation->SetMarkerStyle(20);
-  grInterpolation->SetMarkerColor(kBlue);
-  grInterpolation->Draw("same p");
-
-  //canvas3->cd();
+  canvas1->cd();
+  grWF->SetMinimum(-500);
+  grWF->SetMaximum(500);
+  grWF->GetXaxis()->SetLimits(-800,0);
+  grWF->GetYaxis()->SetLimits(-800,800);
+  grWF->SetMarkerStyle(20);
+  grWF->SetMarkerColor(kRed);
+  grWF->SetMarkerSize(0.5);
+  grWF->Draw("p0");
   grTransIP->SetMarkerStyle(20);
-  grTransIP->SetMarkerColor(kRed);
-  grTransIP->Draw("p0");
-  //gr->Draw("same p0");
+  grTransIP->SetMarkerColor(kBlue);
+  grTransIP->SetMarkerSize(0.3);
+  grTransIP->Draw("same p0 ");
+  canvas1->Print("interpolation_with_mesh.pdf");
 
   tout->Write();
   fout->Close();
