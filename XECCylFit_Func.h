@@ -18,6 +18,9 @@ Double_t WFMPPCX[NMPPC];
 Double_t WFMPPCY[NMPPC];
 Double_t WFMPPCZ[NMPPC];
 Bool_t WFUsedMPPC[NMPPC];
+Double_t IPMPPCX[NMPPC];
+Double_t IPMPPCY[NMPPC];
+Double_t IPMPPCZ[NMPPC];
 
 
 void fcn(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag);

@@ -17,16 +17,18 @@ void XECCylFit_calpar(void){
   Double_t XPos;
   Double_t YPos;
   Double_t ZPos;
+  Bool_t DataQual;
 
-  tout->Branch("ChNum",&ChNum);
+  tout->Branch("channel",&ChNum);
   tout->Branch("XPos",&XPos);
   tout->Branch("YPos",&YPos);
   tout->Branch("ZPos",&ZPos);
+  tout->Branch("DataQual",&DataQual);
 
   Double_t *trans = new Double_t[3];
   TCanvas* canvas1=new TCanvas("canvas1","graph",600,600);
-  TCanvas* canvas2=new TCanvas("canvas2","ZPhi",1200,600);
-  //TCanvas* canvas3 = new TCanvas("canvas3","Totally interpolated",600,600);
+  TCanvas* canvas2=new TCanvas("canvas2","ZPhi",2400,1200);
+  TCanvas* canvas3 = new TCanvas("canvas3","Totally interpolated",600,600);
   TGraph2D *grWF = new TGraph2D();
   TGraph2D *grTransIP =new TGraph2D();
   TGraph* grZPhi[NPart];
@@ -171,19 +173,49 @@ void XECCylFit_calpar(void){
         Double_t tmpcyl[3]={R,TMath::DegToRad()*CylPhiPos,CylZPos};
         Double_t tmpcartes[3]={};
         Cyl2Cartes(tmpcartes,tmpcyl,Center,ZAxis,R);
-        ChNum=i;
-        XPos=tmpcartes[0];
-        YPos=tmpcartes[1];
-        ZPos=tmpcartes[2];
-        tout->Fill();
-        grTransIP->SetPoint(grTransIP->GetN(),XPos,YPos,ZPos);
+        IPMPPCX[i]=tmpcartes[0];
+        IPMPPCY[i]=tmpcartes[1];
+        IPMPPCZ[i]=tmpcartes[2];
+        // grTransIP->SetPoint(grTransIP->GetN(),XPos,YPos,ZPos);
       }
     }
 
-
     canvas2->cd(mode+1);
-    grZPhi[mode]->SetMarkerStyle(21);
-    //grZPhi[mode]->SetMarkerSize(0.3);
+    TString strside;
+    if(mode%2==0){
+      strside="US";
+    }else{
+      strside="DS";
+    }
+    Int_t CFRP=TMath::Floor(mode/2);
+    TString strCFRP;
+    switch (CFRP) {
+      case 0:
+      strCFRP="CFRP: A";
+      break;
+      case 1:
+      strCFRP="CFRP: B";
+      break;
+      case 2:
+      strCFRP="CFRP: C";
+      break;
+      case 3:
+      strCFRP="CFRP: D";
+      break;
+      default:
+      strCFRP="unknown";
+      break;
+    }
+
+    TString MeshTitle="Mesh Fitting";
+    TString RawTitle = "Well-Fitted MPPCs";
+    //TString TopTitle=MeshTitle+" "+strCFRP+" "+strside+";";
+    TString TopTitle=RawTitle+" "+strCFRP+" "+strside+";";
+    TString AxisTitle="Z [mm];#phi [deg]";
+    TString TotalTitle=TopTitle+AxisTitle;
+    grZPhi[mode]->SetTitle(TotalTitle);
+    grZPhi[mode]->SetMarkerStyle(20);
+    grZPhi[mode]->SetMarkerSize(1);
     grZPhi[mode]->SetMarkerColor(kRed);
     grZPhi[mode]->Draw("ap");
     grInterpolation[mode]->SetMarkerStyle(20);
@@ -193,6 +225,15 @@ void XECCylFit_calpar(void){
 
   }
 
+
+  for (int i = 0; i < NMPPC; i++) {
+    ChNum=i;
+    XPos=IPMPPCX[i];
+    YPos=IPMPPCY[i];
+    ZPos=IPMPPCZ[i];
+    DataQual=true;
+    tout->Fill();
+  }
   canvas1->cd();
   grWF->SetMinimum(-500);
   grWF->SetMaximum(500);
@@ -206,7 +247,11 @@ void XECCylFit_calpar(void){
   grTransIP->SetMarkerColor(kBlue);
   grTransIP->SetMarkerSize(0.3);
   grTransIP->Draw("same p0 ");
-  canvas1->Print("interpolation_with_mesh.pdf");
+  canvas1->Print("./images/interpolation_with_mesh.pdf");
+
+  canvas3->cd();
+  grZPhi[4]->Draw("ap");
+  //grInterpolation[4]->Draw("same p");
 
   tout->Write();
   fout->Close();
