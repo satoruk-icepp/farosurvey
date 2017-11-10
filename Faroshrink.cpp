@@ -1,6 +1,6 @@
 #include "XECCylFit_Func.h"
 
-Double_t thcoSUS=20*pow(10,-6);
+Double_t thcoSUS=16*pow(10,-6);
 Double_t dT=130;
 
 void ShrinkVector(Double_t *shrvec,Double_t *RawPos, Double_t *SOPos);
@@ -17,14 +17,14 @@ void Faroshrink(){
   tin->SetBranchAddress("ZPos",&RawPos[2]);
 
 
-Int_t channel;
+  Int_t channel;
   Double_t ShrinkPos[3];
-  Bool_t DataQual;
+  //Bool_t DataQual;
   tout->Branch("XPos",&ShrinkPos[0]);
   tout->Branch("YPos",&ShrinkPos[1]);
   tout->Branch("ZPos",&ShrinkPos[2]);
   tout->Branch("channel",&channel);
-  tout->Branch("DataQual",&DataQual);
+  //tout->Branch("DataQual",&DataQual);
 
   Double_t ShrinkOrigin[3]={0,-1100,0};
 
@@ -37,7 +37,7 @@ Int_t channel;
     for (int i = 0; i < 3; i++) {
       ShrinkPos[i]=RawPos[i]+shrvec[i];
     }
-    DataQual=true;
+    //DataQual=true;
     channel=iCh;
     tout->Fill();
   }

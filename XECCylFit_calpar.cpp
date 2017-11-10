@@ -10,6 +10,11 @@
 
 void XECCylFit_calpar(void){
 
+  TString outputfilename;
+  outputfilename.Form("cylfitdata.csv");
+  ofstream output;
+  output.open(outputfilename,std::ios::out);
+
   TFile* fout=new TFile("FAROMPPC_ip_mesh.root","recreate");
   TTree* tout=new TTree("tip","tip");
 
@@ -43,7 +48,7 @@ void XECCylFit_calpar(void){
   vector<Int_t> id_v;
   vector<Double_t> a_v, b_v, c_v;
   //ifstream data("cyl_data_20170311_1.dat");
-  ifstream data("XECFAROSiPMOnCOBRA.dat");
+  ifstream data("/meg/home/kobayashi_s/meg2/analyzer/macros/xec/survey/XECFAROSiPMOnCOBRA.dat");
   //ifstream data("mppc_cobra.dat");
   while(data>>id>>a>>b>>c){
     id_v.push_back(id);
@@ -163,6 +168,9 @@ void XECCylFit_calpar(void){
     gMinuit_Phimesh->GetParameter(1, PhiSpace, PhiSpaceErr);
     gMinuit_Phimesh->GetParameter(2, PhiTilt, PhiTiltErr);
 
+
+
+
     for (Int_t i = 0; i < NMPPC; i++) {
       Int_t tmprow=i/NColumn;
       Int_t tmpcolumn=i%NColumn;
@@ -222,6 +230,10 @@ void XECCylFit_calpar(void){
     //grZPhi[mode]->SetMarkerSize(0.1);
     grInterpolation[mode]->SetMarkerColor(kBlue);
     grInterpolation[mode]->Draw("same p");
+
+    Double_t Distance=TMath::Sqrt(R*R*(2-2*TMath::Cos(TMath::DegToRad()*PhiTilt))+ZSpace*ZSpace);
+    std::cout<<"Distance: "<<Distance<<std::endl;
+    output<<strCFRP<<","<<strside<<","<<Distance<<","<<R<<","<<Center[0]<<","<<Center[1]<<","<<Center[2]<<","<<ZAxis.X()<<","<<ZAxis.Y()<<","<<ZAxis.Z()<<std::endl;
 
   }
 
