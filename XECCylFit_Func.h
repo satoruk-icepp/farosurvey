@@ -37,7 +37,7 @@ void Cyl2Cartes(Double_t *Cartes,Double_t *Cyl,Double_t *Center,TVector3 ZAxis,D
 void fcn(Int_t &npar, Double_t *gin, Double_t &f, Double_t *par, Int_t iflag){
   // Int_t npnt=12;
   //Int_t npnt = nwf;
-  Int_t iter = 1;
+  Int_t iter = 2;
   Double_t chisq=0;
   Double_t delta;
   for(int i=0; i<NMPPC;i++){

@@ -69,7 +69,7 @@ void XECCylFit_calpar(void){
     WFMPPCZ[tmpid] = c_v.at(i);
     grWF->SetPoint(grWF->GetN(), WFMPPCX[tmpid], WFMPPCY[tmpid], WFMPPCZ[tmpid]);
   }
-  canvas2->Divide(4,2);
+  //canvas2->Divide(4,2);
   for (mode = 0; mode < NPart; mode++) {
     grZPhi[mode]=new TGraph();
     grInterpolation[mode]=new TGraph();
@@ -95,6 +95,7 @@ void XECCylFit_calpar(void){
     gMinuit->mnparm(6, "directionZ", vstart[6], step[6], -1, 1, ierflg);
 
     gMinuit->FixParameter(3);
+    //gMinuit->FixParameter(6);
     arglist[0]=500;
     arglist[1]=1.;
 
